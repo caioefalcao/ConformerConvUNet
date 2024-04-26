@@ -20,10 +20,6 @@ from tensorflow.keras.models import Model, Sequential
 
 #from keras_flops import get_flops
 
-#imports Comformer
-import einops
-from einops import rearrange
-from einops.layers.tensorflow import Rearrange
 
 import os
 os.environ["PATH"] += os.pathsep + 'C:\\Program Files\\Graphviz\\bin\\'
@@ -45,7 +41,7 @@ def convolution_block(block_input, num_filters=256, kernel_size=3, dilation_rate
     x = layers.BatchNormalization()(x)
     return tf.nn.relu(x)
 
-def COMFORMER_CONV_UNET(image_size, num_classes,activation):
+def CONFORMER_CONV_UNET(image_size, num_classes,activation):
     
     model_input = keras.Input(shape=(image_size, image_size, 3))
     
@@ -139,7 +135,7 @@ def UNet_Enconder(input):
 
 
 ########################################################
-############### Comformer Conv Architecture ############
+############### Conformer Conv Architecture ############
 ########################################################
 # GLU Activation
 class GatedLinearUnit(tf.keras.layers.Layer):
@@ -185,7 +181,7 @@ class DepthwiseLayer(tf.keras.layers.Layer):
 
         return self.conv(inputs)
 
-#Comformer Conv Module Architecture
+#Conformer Conv Module Architecture
 def conformerConvModule(model_input,filters=64, kernel_size=3):
     dim = filters
     # Create skip connection Residual
@@ -224,10 +220,10 @@ def mytest():
     IMAGE_SIZE = 256
     
     
-    model = COMFORMER_CONV_UNET(image_size=IMAGE_SIZE, num_classes=NUM_CLASSES, activation="softmax")
+    model = CONFORMER_CONV_UNET(image_size=IMAGE_SIZE, num_classes=NUM_CLASSES, activation="softmax")
     model.summary()
     patha="G:\\Meu Drive\\!Doutorado_UFMA-UFPI\\!Codes\\PPM\\Revista\\Revista\\Customizando_Bloco_PPM\\1 - Conformer Conv_UNet copy\\"
-    plot_model(model, to_file= patha + "model_plot_UNet_ComformerConv2.png", show_shapes=True, show_layer_names=True)
+    plot_model(model, to_file= patha + "model_plot_UNet_ConformerConv2.png", show_shapes=True, show_layer_names=True)
     
     
     model.save(patha+"keras_model.h5")
