@@ -36,7 +36,7 @@
     <img src="images/ComformerAdaptationArchitecture.png" alt="Logo" >
   </a>
 
-  <h3 align="center">Best-README-Template</h3>
+  <h3 align="center">Conformer Convolutional UNet</h3>
 
   <p align="center">
     An awesome README template to jumpstart your projects!
