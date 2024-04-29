@@ -123,19 +123,50 @@ def UNet_Enconder(input):
     n_filtro = 48
 
     # Construct the encoder blocks 
-    skip1, encoder_1 = conformerConvModule(input1, n_filtro)
-    skip2, encoder_2 = conformerConvModule(encoder_1,  n_filtro*2)
-    skip3, encoder_3 = conformerConvModule(encoder_2, n_filtro*4)
-    skip4, encoder_4 = conformerConvModule(encoder_3, n_filtro*8)
+    skip1, encoder_1 = DilatedSpatialPyramidPooling(input1, n_filtro)
+    skip2, encoder_2 = DilatedSpatialPyramidPooling(encoder_1,  n_filtro*2)
+    skip3, encoder_3 = DilatedSpatialPyramidPooling(encoder_2, n_filtro*4)
+    skip4, encoder_4 = DilatedSpatialPyramidPooling(encoder_3, n_filtro*8)
         
     # Preparing the next block
     conv_block = bottleneck_block(encoder_4,  n_filtro*16)
     
     return [skip1,skip2,skip3,skip4],conv_block
 ########################################################
-############### ASPP Architecture ############
+############### ASPP Architecture ######################
 ########################################################
+def DilatedSpatialPyramidPooling(dspp_input, n_filtro):
+    dims = dspp_input.shape
+    x = layers.AveragePooling2D(pool_size=(dims[-3], dims[-2]))(dspp_input)
+    x = convolution_block(x, kernel_size=1, use_bias=True,num_filters=n_filtro)
+    out_pool = layers.UpSampling2D(
+        size=(dims[-3] // x.shape[1], dims[-2] // x.shape[2]),
+        interpolation="bilinear",
+    )(x)
 
+    out_1 = convolution_block(dspp_input, kernel_size=1, dilation_rate=1,num_filters=n_filtro)
+    out_6 = convolution_block(dspp_input, kernel_size=3, dilation_rate=6,num_filters=n_filtro)
+    out_12 = convolution_block(dspp_input, kernel_size=3, dilation_rate=12,num_filters=n_filtro)
+    out_18 = convolution_block(dspp_input, kernel_size=3, dilation_rate=18,num_filters=n_filtro)
+
+    x = layers.Concatenate(axis=-1)([out_pool, out_1, out_6, out_12, out_18])
+    
+    output = convolution_block(x, kernel_size=1,num_filters=n_filtro)
+
+    #Adapted for Unet Encoder
+    next_layer = tf.keras.layers.MaxPooling2D(pool_size = (2,2))(output) 
+    skip_connection = output
+    return skip_connection, next_layer
+# def convolution_block(block_input, num_filters=256, kernel_size=3, dilation_rate=1, padding="same", use_bias=False,):
+#     x = layers.Conv2D(num_filters,
+#         kernel_size=kernel_size,
+#         dilation_rate=dilation_rate,
+#         padding="same",
+#         use_bias=use_bias,
+#         kernel_initializer=keras.initializers.HeNormal(),
+#     )(block_input)
+#     x = layers.BatchNormalization()(x)
+#     return tf.nn.relu(x)
 
 ########################################################
 ############### Conformer Conv Architecture ############
@@ -225,11 +256,11 @@ def mytest():
     
     model = CONFORMER_CONV_UNET(image_size=IMAGE_SIZE, num_classes=NUM_CLASSES, activation="softmax")
     model.summary()
-    patha="G:\\Meu Drive\\!Doutorado_UFMA-UFPI\\!Codes\\PPM\\Revista\\Revista\\Customizando_Bloco_PPM\\1 - Conformer Conv_UNet copy\\"
-    plot_model(model, to_file= patha + "model_plot_UNet_ConformerConv2.png", show_shapes=True, show_layer_names=True)
+    patha="C:\\Users\\caio\\Documents\\GitHub\\ConformerConvUNet\\model_plot\\"
+    plot_model(model, to_file= patha + "model_plot_UNet_ASPP.png", show_shapes=True, show_layer_names=True)
     
     
-    model.save(patha+"keras_model.h5")
+    # model.save(patha+"keras_model.h5")
 
 if __name__ == '__main__':
     mytest()
