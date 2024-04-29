@@ -132,6 +132,9 @@ def UNet_Enconder(input):
     conv_block = bottleneck_block(encoder_4,  n_filtro*16)
     
     return [skip1,skip2,skip3,skip4],conv_block
+########################################################
+############### ASPP Architecture ############
+########################################################
 
 
 ########################################################
