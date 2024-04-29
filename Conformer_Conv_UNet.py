@@ -144,10 +144,10 @@ def DilatedSpatialPyramidPooling(dspp_input, n_filtro):
         interpolation="bilinear",
     )(x)
 
-    out_1 = convolution_block(dspp_input, kernel_size=1, dilation_rate=1,num_filters=n_filtro)
-    out_6 = convolution_block(dspp_input, kernel_size=3, dilation_rate=6,num_filters=n_filtro)
-    out_12 = convolution_block(dspp_input, kernel_size=3, dilation_rate=12,num_filters=n_filtro)
-    out_18 = convolution_block(dspp_input, kernel_size=3, dilation_rate=18,num_filters=n_filtro)
+    out_1 = conformerConvModule(dspp_input, kernel_size=1, dilation_rate=1,filters=n_filtro)
+    out_6 = conformerConvModule(dspp_input, kernel_size=3, dilation_rate=6,filters=n_filtro)
+    out_12 = conformerConvModule(dspp_input, kernel_size=3, dilation_rate=12,filters=n_filtro)
+    out_18 = conformerConvModule(dspp_input, kernel_size=3, dilation_rate=18,filters=n_filtro)
 
     x = layers.Concatenate(axis=-1)([out_pool, out_1, out_6, out_12, out_18])
     
@@ -215,8 +215,8 @@ class DepthwiseLayer(tf.keras.layers.Layer):
 
         return self.conv(inputs)
 
-#Conformer Conv Module Architecture
-def conformerConvModule(model_input,filters=64, kernel_size=3):
+#Conformer Conv Module Architecture With Dilated
+def conformerConvModule(model_input,filters=64, kernel_size=3,dilation_rate=1):
     dim = filters
     # Create skip connection Residual
     x_skip_res = model_input
@@ -231,7 +231,7 @@ def conformerConvModule(model_input,filters=64, kernel_size=3):
     convDeth = tf.keras.layers.Conv1D(filters=inner_dim,                         # 1D Depthwise Conv
                                    kernel_size=kernel_size,
                                    padding='same',
-                                   groups=inner_dim)(act_glu)
+                                   groups=inner_dim,dilation_rate=dilation_rate)(act_glu)
     batch_norm1 = BatchNormalization()(convDeth)
     act_swish = Swish()(batch_norm1)
     conv1 = tf.keras.layers.Conv1D(filters=dim, kernel_size=1)(act_swish)
@@ -241,10 +241,11 @@ def conformerConvModule(model_input,filters=64, kernel_size=3):
     x_skip_res = tf.keras.layers.Conv2D(filters=dim, kernel_size=(1,1), strides=(1,1))(x_skip_res)
     add_out = Add()([x_skip_res,drop])
 
-    #Adapted for Unet Encoder
-    next_layer = tf.keras.layers.MaxPooling2D(pool_size = (2,2))(add_out)   
-    skip_connection = add_out 
-    return skip_connection,next_layer
+    return add_out
+    # #Adapted for Unet Encoder
+    # next_layer = tf.keras.layers.MaxPooling2D(pool_size = (2,2))(add_out)   
+    # skip_connection = add_out 
+    # return skip_connection,next_layer
 
 def mytest():
     ########################################################
@@ -257,7 +258,7 @@ def mytest():
     model = CONFORMER_CONV_UNET(image_size=IMAGE_SIZE, num_classes=NUM_CLASSES, activation="softmax")
     model.summary()
     patha="C:\\Users\\caio\\Documents\\GitHub\\ConformerConvUNet\\model_plot\\"
-    plot_model(model, to_file= patha + "model_plot_UNet_ASPP.png", show_shapes=True, show_layer_names=True)
+    plot_model(model, to_file= patha + "model_plot_UNet_ConformerConv_ASPP.png", show_shapes=True, show_layer_names=True)
     
     
     # model.save(patha+"keras_model.h5")
